@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bộ tự quan sát 6 chiều</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f5f1;
+  --surface: #ffffff;
+  --surface-2: #efede7;
+  --text: #1d1c1a;
+  --muted: #6b6860;
+  --line: #dedbd2;
+  --accent: #1f5f5b;
+  --accent-soft: #dcebe9;
+  --accent-text: #ffffff;
+  --warn: #9a5b00;
+  --warn-soft: #fbefd9;
+  --danger: #a33a2c;
+  --mid-band: rgba(31, 95, 91, 0.08);
+  --bar: #1f5f5b;
+  --bar-obs: #b0742a;
+  --radius: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141413;
+    --surface: #1d1d1b;
+    --surface-2: #262623;
+    --text: #ecebe6;
+    --muted: #a19e95;
+    --line: #34332f;
+    --accent: #6cb8b0;
+    --accent-soft: #1f3533;
+    --accent-text: #0f1f1e;
+    --warn: #e7b25e;
+    --warn-soft: #3a2e1a;
+    --danger: #e98a7c;
+    --mid-band: rgba(108, 184, 176, 0.1);
+    --bar: #6cb8b0;
+    --bar-obs: #e0a65c;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.6 "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 4px; letter-spacing: -0.01em; }
+h2 { font-size: 1.25rem; line-height: 1.35; margin: 0 0 12px; }
+h3 { font-size: 1.05rem; margin: 0; }
+p { margin: 0 0 12px; }
+.sub { color: var(--muted); font-size: 0.92rem; margin-bottom: 28px; }
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 20px; margin-bottom: 16px;
+}
+.choices { display: grid; gap: 12px; }
+.choice {
+  display: block; width: 100%; text-align: left; cursor: pointer; font: inherit; color: inherit;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px;
+}
+.choice:hover { border-color: var(--accent); }
+.choice strong { display: block; font-size: 1.05rem; margin-bottom: 2px; }
+.choice span { color: var(--muted); font-size: 0.92rem; }
+.choice .tag { display: block; margin-top: 8px; font-size: 0.8rem; color: var(--accent); font-weight: 600; }
+.btn {
+  font: inherit; font-weight: 600; cursor: pointer; border-radius: 10px; padding: 10px 18px;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-text);
+}
+.btn.secondary { background: transparent; color: var(--accent); }
+.btn.ghost { background: transparent; border-color: var(--line); color: var(--text); font-weight: 500; }
+.btn.danger { background: transparent; border-color: var(--line); color: var(--danger); font-weight: 500; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.row.end { justify-content: space-between; }
+label.field { display: block; margin-bottom: 14px; }
+label.field span { display: block; font-weight: 600; font-size: 0.92rem; margin-bottom: 6px; }
+input[type=text], textarea {
+  width: 100%; font: inherit; color: inherit; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+}
+textarea { min-height: 120px; font-family: ui-monospace, Consolas, monospace; font-size: 0.82rem; }
+input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.intro { background: var(--surface-2); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 18px; }
+.intro p:last-child { margin-bottom: 0; }
+.note { font-size: 0.88rem; color: var(--muted); }
+.warnbox { background: var(--warn-soft); color: var(--text); border-radius: 10px; padding: 12px 14px; font-size: 0.9rem; margin-bottom: 16px; }
+
+/* form */
+.progress { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 12px 0 10px; margin-bottom: 8px; }
+.progress .meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+.track { height: 6px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.track > div { height: 100%; background: var(--accent); transition: width 0.2s; }
+.item { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 12px; }
+.item.missing { border-color: var(--danger); }
+.item .q { margin-bottom: 12px; }
+.item .q b { color: var(--muted); font-weight: 500; margin-right: 6px; }
+.opts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.opts.with-na { grid-template-columns: repeat(5, 1fr); }
+.opt {
+  font: inherit; font-size: 0.8rem; line-height: 1.3; cursor: pointer; color: inherit;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 4px; min-height: 52px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center;
+}
+.opt .n { font-weight: 700; font-size: 0.95rem; }
+.opt:hover { border-color: var(--accent); }
+.opt.on { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.opt.na { grid-column: 1 / -1; min-height: 38px; flex-direction: row; border-style: dashed; color: var(--muted); }
+.opt.na.on { background: var(--surface-2); color: var(--text); border-style: solid; border-color: var(--muted); }
+@media (max-width: 560px) {
+  .opts, .opts.with-na { grid-template-columns: 1fr; }
+  .opt { flex-direction: row; justify-content: flex-start; gap: 10px; min-height: 42px; padding: 8px 12px; text-align: left; }
+  .opt .n { width: 18px; }
+}
+
+/* results */
+.caveat { font-size: 0.88rem; color: var(--muted); border-left: 3px solid var(--line); padding-left: 12px; margin-bottom: 20px; }
+.factor { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 12px; }
+.factor .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.score { font-variant-numeric: tabular-nums; font-weight: 700; }
+.lvl { font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+.lvl.cao { background: var(--accent-soft); color: var(--accent); }
+.lvl.thap { background: var(--warn-soft); color: var(--warn); }
+.facet { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 2fr) 3.2em; gap: 10px; align-items: center; padding: 5px 0; font-size: 0.9rem; }
+.facet .nm small { display: block; color: var(--muted); font-size: 0.75rem; }
+.scale { position: relative; height: 10px; background: var(--surface-2); border-radius: 99px; }
+.scale .band { position: absolute; top: 0; bottom: 0; left: 37.5%; width: 25%; background: var(--mid-band); border-left: 1px dashed var(--line); border-right: 1px dashed var(--line); }
+.scale .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: var(--bar); }
+.facet .val { text-align: right; font-variant-numeric: tabular-nums; }
+.legend { font-size: 0.8rem; color: var(--muted); margin: 0 0 16px; }
+
+/* compare */
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+th, td { padding: 7px 6px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; vertical-align: top; }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 600; color: var(--muted); font-size: 0.8rem; }
+tr.factor-row td { font-weight: 700; background: var(--surface-2); }
+td.diff { color: var(--warn); font-weight: 700; }
+.vt { font-size: 0.72rem; color: var(--warn); font-weight: 600; display: block; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 12px; margin-bottom: 16px; }
+.status { font-size: 0.9rem; margin-top: 10px; }
+.status.ok { color: var(--accent); }
+.status.err { color: var(--danger); }
+footer { margin-top: 40px; font-size: 0.8rem; color: var(--muted); }
+.hidden { display: none !important; }
+@media (max-width: 560px) {
+  .facet { grid-template-columns: minmax(0, 1fr) 3.2em; row-gap: 4px; }
+  .facet .nm { grid-column: 1 / -1; }
+}
+</style>
+</head>
+<body>
+<main id="app"></main>
+
+<script>
+/* ============================================================
+   CẤU HÌNH — điền endpoint sau khi deploy Apps Script
+   ============================================================ */
+const CONFIG = {
+  endpoint: "",               // URL Web app của Apps Script (…/exec)
+  token: "Ow9nDAOJldJxV5K9o42Q6mPO",          // phải trùng TOKEN trong apps-script.gs
+  owner: "Dương",              // người nhận kết quả
+  version: "v0.2",
+  pageSize: 10,
+};
+
+/* ============================================================
+   DỮ LIỆU CÂU HỎI — nguồn: design-v0.2.md
+   id: mã · f: facet · t: câu · r: câu nghịch (điểm = 6 − x) · vt: nhạy với vai trò
+   ============================================================ */
+const SELF_ITEMS = [
+  {"id": "H1", "f": "Sincerity", "t": "Để có được điều mình cần, tôi sẵn sàng tỏ ra quý một người mà thật ra tôi không ưa.", "r": true},
+  {"id": "H2", "f": "Sincerity", "t": "Tôi điều chỉnh ý kiến của mình cho hợp với điều người có quyền quyết định muốn nghe.", "r": true},
+  {"id": "H3", "f": "Sincerity", "t": "Tôi thà bị từ chối còn hơn phải khen điều mình không thật lòng nghĩ để được đồng ý.", "r": false},
+  {"id": "H4", "f": "Sincerity", "t": "Tôi đối xử với một người như nhau, dù người đó có giúp được gì cho tôi hay không.", "r": false},
+  {"id": "H5", "f": "Fairness", "t": "Nếu chắc chắn không bị phát hiện, đi xe hay vào cổng mà không trả vé cũng không phải chuyện lớn.", "r": true},
+  {"id": "H6", "f": "Fairness", "t": "Khi phát hiện một sai sót có lợi cho mình, như được chuyển thừa tiền, tôi báo lại dù không ai biết.", "r": false},
+  {"id": "H7", "f": "Fairness", "t": "Trong kinh doanh, lách quy định một chút là chuyện bình thường, ai cũng làm.", "r": true},
+  {"id": "H8", "f": "Fairness", "t": "Khi mua bán với người không rành giá, tôi vẫn trả mức giá hợp lý thay vì tranh thủ ép giá.", "r": false},
+  {"id": "H9", "f": "Greed Avoidance", "t": "Tôi muốn sở hữu những món đồ mà người khác nhìn vào là biết đắt tiền.", "r": true},
+  {"id": "H10", "f": "Greed Avoidance", "t": "Chức danh nghe oai là điều tôi cân nhắc nghiêm túc khi chọn việc, kể cả khi lương như nhau.", "r": true},
+  {"id": "H11", "f": "Greed Avoidance", "t": "Tôi thấy thoải mái với mức sống đủ dùng, không cần hơn người xung quanh.", "r": false},
+  {"id": "H12", "f": "Greed Avoidance", "t": "Tôi dùng điện thoại, xe hay đồ dùng cho tới khi chúng hỏng mới thay.", "r": false},
+  {"id": "H13", "f": "Modesty", "t": "Tôi thấy khó chịu khi được đối xử y như những người có thành tích kém hơn tôi.", "r": true},
+  {"id": "H14", "f": "Modesty", "t": "Tôi thường tìm cách để người khác biết về thành tích hay các mối quan hệ quan trọng của mình.", "r": true},
+  {"id": "H15", "f": "Modesty", "t": "Khi được khen trước mọi người, tôi thường chia công cho những người cùng làm.", "r": false},
+  {"id": "H16", "f": "Modesty", "t": "Tôi thấy thoải mái khi được đối xử như mọi người khác, bất kể vị trí của mình.", "r": false},
+  {"id": "E1", "f": "Fearfulness", "t": "Tôi ngại thử những môn thể thao có nguy cơ chấn thương, dù nhiều người thấy vui.", "r": false},
+  {"id": "E2", "f": "Fearfulness", "t": "Trước một tình huống nguy hiểm về thể chất, như tai nạn ngay trước mắt, tôi thường bình tĩnh hơn là hoảng.", "r": true},
+  {"id": "E3", "f": "Fearfulness", "t": "Trước khi làm một việc lạ, như đi đêm một mình hay bơi chỗ sâu, tôi hay nghĩ tới việc mình có thể bị thương.", "r": false},
+  {"id": "E4", "f": "Fearfulness", "t": "Tôi sẵn sàng làm những việc khiến người khác thấy sợ, như leo cao hay lặn biển.", "r": true},
+  {"id": "E5", "f": "Anxiety", "t": "Trước một buổi trình bày quan trọng, tôi thường khó ngủ.", "r": false},
+  {"id": "E6", "f": "Anxiety", "t": "Một tin nhắn quan trọng chưa được trả lời có thể khiến tôi nghĩ ngợi cả buổi.", "r": false},
+  {"id": "E7", "f": "Anxiety", "t": "Khi deadline dồn dập, tôi vẫn giữ được đầu óc thoải mái.", "r": true},
+  {"id": "E8", "f": "Anxiety", "t": "Sau khi đã làm hết sức, tôi dễ dàng thôi nghĩ về kết quả.", "r": true},
+  {"id": "E9", "f": "Dependence", "t": "Sau một ngày tệ, tôi thường gọi cho một người thân để nói chuyện cho nhẹ lòng.", "r": false},
+  {"id": "E10", "f": "Dependence", "t": "Khi lo lắng về một việc, tôi muốn có người ở bên hơn là tự xử lý một mình.", "r": false},
+  {"id": "E11", "f": "Dependence", "t": "Chuyện buồn của mình, tôi thường tự tiêu hoá, ít khi kể với ai.", "r": true},
+  {"id": "E12", "f": "Dependence", "t": "Tôi hiếm khi xin lời khuyên của người khác về chuyện cá nhân.", "r": true},
+  {"id": "E13", "f": "Sentimentality", "t": "Tôi dễ rưng rưng khi xem những cảnh chia tay, dù chỉ là phim.", "r": false},
+  {"id": "E14", "f": "Sentimentality", "t": "Tôi giữ lại những món đồ nhỏ gắn với kỷ niệm, dù chúng không còn dùng được.", "r": false},
+  {"id": "E15", "f": "Sentimentality", "t": "Ở đám cưới hay buổi chia tay, tôi thường là người bình thản nhất.", "r": true},
+  {"id": "E16", "f": "Sentimentality", "t": "Tôi ít khi bị ảnh hưởng cảm xúc khi thấy người khác khóc.", "r": true},
+  {"id": "X1", "f": "Social Self-Esteem", "t": "Tôi thấy mình có nhiều điểm đáng quý mà người khác có thể nhận ra.", "r": false},
+  {"id": "X2", "f": "Social Self-Esteem", "t": "Trong một nhóm mới, tôi thường nghĩ mình là người ít thú vị nhất.", "r": true},
+  {"id": "X3", "f": "Social Self-Esteem", "t": "Khi so với bạn bè cùng trang lứa, tôi hay thấy mình kém hơn.", "r": true},
+  {"id": "X4", "f": "Social Self-Esteem", "t": "Tôi tin người làm việc cùng thấy có tôi trong nhóm là một điểm cộng.", "r": false},
+  {"id": "X5", "f": "Social Boldness", "t": "Trong cuộc họp, tôi nói ra ý kiến trái chiều kể cả khi người có chức vụ cao nhất đã nêu quan điểm khác.", "r": false},
+  {"id": "X6", "f": "Social Boldness", "t": "Khi được mời nói vài lời trước cả hội trường, tôi tìm cách từ chối.", "r": true},
+  {"id": "X7", "f": "Social Boldness", "t": "Khi có người chen hàng trước mặt, tôi lên tiếng nhắc họ.", "r": false},
+  {"id": "X8", "f": "Social Boldness", "t": "Ở một sự kiện không quen ai, tôi thường đứng riêng cho đến khi có người tới bắt chuyện.", "r": true},
+  {"id": "X9", "f": "Sociability", "t": "Tôi thích những buổi tụ tập đông người sau giờ làm.", "r": false},
+  {"id": "X10", "f": "Sociability", "t": "Nếu được chọn, tôi thích dành cuối tuần một mình hơn là gặp bạn bè.", "r": true},
+  {"id": "X11", "f": "Sociability", "t": "Tôi hay là người rủ mọi người đi ăn, đi chơi.", "r": false},
+  {"id": "X12", "f": "Sociability", "t": "Nói chuyện phiếm lâu làm tôi thấy mệt.", "r": true},
+  {"id": "X13", "f": "Liveliness", "t": "Buổi sáng đi làm, tôi thường thấy hào hứng với những việc trong ngày.", "r": false},
+  {"id": "X14", "f": "Liveliness", "t": "Người xung quanh hay nói tôi mang lại không khí vui cho nhóm.", "r": false},
+  {"id": "X15", "f": "Liveliness", "t": "Tôi ít khi thấy thật sự phấn khởi về điều gì.", "r": true},
+  {"id": "X16", "f": "Liveliness", "t": "Khi nhóm ăn mừng một kết quả tốt, tôi vui nhưng thường khá trầm.", "r": true},
+  {"id": "A1", "f": "Forgivingness", "t": "Khi một đồng nghiệp làm tôi thiệt, tôi vẫn hợp tác bình thường với họ ở việc sau.", "r": false},
+  {"id": "A2", "f": "Forgivingness", "t": "Tôi nhớ rất lâu những lần bị ai đó đối xử không đúng.", "r": true},
+  {"id": "A3", "f": "Forgivingness", "t": "Một khi đã mất lòng tin vào ai, tôi rất khó cho họ cơ hội lần hai.", "r": true},
+  {"id": "A4", "f": "Forgivingness", "t": "Nếu người làm tôi tổn thương xin lỗi thật lòng, tôi bỏ qua được khá nhanh.", "r": false},
+  {"id": "A5", "f": "Gentleness", "t": "Tôi đánh giá khá khắt khe những người làm việc không đạt chuẩn.", "r": true},
+  {"id": "A6", "f": "Gentleness", "t": "Khi ai đó mắc lỗi, tôi nghĩ tới hoàn cảnh của họ trước khi kết luận.", "r": false},
+  {"id": "A7", "f": "Gentleness", "t": "Khi góp ý, tôi thường nói nhẹ nhàng hơn mức cần thiết.", "r": false},
+  {"id": "A8", "f": "Gentleness", "t": "Tôi dễ thấy khuyết điểm của người khác hơn là ưu điểm.", "r": true},
+  {"id": "A9", "f": "Flexibility", "t": "Khi tranh luận, tôi sẵn sàng chấp nhận một phương án ở giữa dù tin mình đúng hơn.", "r": false},
+  {"id": "A10", "f": "Flexibility", "t": "Tôi khó chấp nhận khi người khác làm theo cách khác với cách tôi đề xuất.", "r": true},
+  {"id": "A11", "f": "Flexibility", "t": "Tôi giữ đề xuất của mình tới cùng, kể cả khi cả nhóm muốn kết thúc cuộc họp cho êm.", "r": true},
+  {"id": "A12", "f": "Flexibility", "t": "Tôi dễ dàng làm theo quyết định của nhóm, dù đó không phải cách tôi chọn.", "r": false},
+  {"id": "A13", "f": "Patience", "t": "Khi người khác làm chậm việc của tôi, tôi dễ lên giọng.", "r": true},
+  {"id": "A14", "f": "Patience", "t": "Rất ít chuyện khiến tôi thật sự tức giận.", "r": false},
+  {"id": "A15", "f": "Patience", "t": "Khi bị ngắt lời lúc đang nói, tôi vẫn giữ được thái độ bình thường.", "r": false},
+  {"id": "A16", "f": "Patience", "t": "Người thân hay nhắc tôi bớt nóng.", "r": true},
+  {"id": "C1", "f": "Organization", "t": "Tôi sắp xếp tài liệu và file để có thể tìm lại bất cứ thứ gì trong vài giây.", "r": false},
+  {"id": "C2", "f": "Organization", "t": "Tôi thường mất thời gian tìm một file mà mình biết là đã lưu ở đâu đó.", "r": true},
+  {"id": "C3", "f": "Organization", "t": "Tôi lên kế hoạch cho tuần trước khi tuần bắt đầu.", "r": false},
+  {"id": "C4", "f": "Organization", "t": "Tôi làm việc theo cảm hứng hơn là theo danh sách việc cụ thể.", "r": true},
+  {"id": "C5", "f": "Diligence", "t": "Tôi thường làm nhiều hơn mức được yêu cầu.", "r": false},
+  {"id": "C6", "f": "Diligence", "t": "Khi một việc khó, tôi hay để sát hạn mới bắt đầu.", "r": true},
+  {"id": "C7", "f": "Diligence", "t": "Tôi tự đặt mục tiêu và theo tới cùng, kể cả khi không ai kiểm tra.", "r": false},
+  {"id": "C8", "f": "Diligence", "t": "Khi đã đạt chỉ tiêu, tôi thường giảm nhịp làm việc cho tới kỳ sau.", "r": true},
+  {"id": "C9", "f": "Perfectionism", "t": "Trước khi gửi một báo cáo, tôi rà lại từng con số dù đã khá chắc là đúng.", "r": false},
+  {"id": "C10", "f": "Perfectionism", "t": "Tôi chấp nhận một sản phẩm \"tạm được\" nếu nó giúp kịp tiến độ.", "r": true},
+  {"id": "C11", "f": "Perfectionism", "t": "Một lỗi chính tả nhỏ trong tài liệu đã gửi đi cũng làm tôi khó chịu.", "r": false},
+  {"id": "C12", "f": "Perfectionism", "t": "Tôi thấy chăm chút chi tiết nhỏ thường là phí thời gian.", "r": true},
+  {"id": "C13", "f": "Prudence", "t": "Tôi hay nhận lời một việc trước, rồi mới tính xem mình có làm nổi không.", "r": true},
+  {"id": "C14", "f": "Prudence", "t": "Trước một quyết định lớn, tôi viết ra các kịch bản xấu có thể xảy ra.", "r": false},
+  {"id": "C15", "f": "Prudence", "t": "Tôi từng mua những món đồ đắt tiền rồi sớm hối hận.", "r": true},
+  {"id": "C16", "f": "Prudence", "t": "Khi đang bực, tôi đợi bình tĩnh lại rồi mới trả lời email hay tin nhắn.", "r": false},
+  {"id": "O1", "f": "Aesthetic Appreciation", "t": "Tôi hay dừng lại để ngắm một công trình đẹp hay một buổi hoàng hôn.", "r": false},
+  {"id": "O2", "f": "Aesthetic Appreciation", "t": "Tranh, nhạc hay kiến trúc hiếm khi để lại ấn tượng mạnh với tôi.", "r": true},
+  {"id": "O3", "f": "Aesthetic Appreciation", "t": "Tôi để ý tới cách trình bày, màu sắc của một tài liệu hay một không gian.", "r": false},
+  {"id": "O4", "f": "Aesthetic Appreciation", "t": "Nếu được chọn, tôi dùng thời gian rảnh cho việc thực tế hơn là xem nghệ thuật.", "r": true},
+  {"id": "O5", "f": "Inquisitiveness", "t": "Tôi hay tìm đọc cách một thứ vận hành, dù không cần cho công việc.", "r": false},
+  {"id": "O6", "f": "Inquisitiveness", "t": "Tôi thích nói chuyện với người ở lĩnh vực hoàn toàn khác để hiểu cách họ nghĩ.", "r": false},
+  {"id": "O7", "f": "Inquisitiveness", "t": "Nếu một kiến thức không dùng được ngay, tôi ít khi bỏ công tìm hiểu.", "r": true},
+  {"id": "O8", "f": "Inquisitiveness", "t": "Khi đi du lịch, tôi quan tâm tới nghỉ ngơi hơn là tìm hiểu lịch sử, văn hoá nơi đó.", "r": true},
+  {"id": "O9", "f": "Creativity", "t": "Tôi hay nghĩ ra cách làm khác cho một việc đã quen.", "r": false},
+  {"id": "O10", "f": "Creativity", "t": "Tôi thích làm theo quy trình có sẵn hơn là tự nghĩ cách mới.", "r": true},
+  {"id": "O11", "f": "Creativity", "t": "Người khác hay tìm tới tôi khi cần ý tưởng mới.", "r": false},
+  {"id": "O12", "f": "Creativity", "t": "Tôi ít khi viết, vẽ, thiết kế hay làm ra thứ gì mới chỉ để cho vui.", "r": true},
+  {"id": "O13", "f": "Unconventionality", "t": "Tôi thấy thú vị với những ý tưởng mà đa số cho là kỳ quặc.", "r": false},
+  {"id": "O14", "f": "Unconventionality", "t": "Tôi thấy khó chịu với những người sống quá khác thường.", "r": true},
+  {"id": "O15", "f": "Unconventionality", "t": "Tôi sẵn sàng thử một cách làm chưa ai ở công ty từng làm.", "r": false},
+  {"id": "O16", "f": "Unconventionality", "t": "Tôi tin làm theo cách số đông đã chọn thường an toàn và đúng hơn.", "r": true},
+  {"id": "AL1", "f": "Altruism", "t": "Tôi thấy khó chịu khi thấy người yếu thế bị đối xử bất công.", "r": false},
+  {"id": "AL2", "f": "Altruism", "t": "Tôi sẵn sàng dành thời gian giúp một người mới, dù việc đó không được ghi nhận.", "r": false},
+  {"id": "AL3", "f": "Altruism", "t": "Tôi nghĩ mỗi người nên tự lo cho mình, không nên trông vào lòng tốt của người khác.", "r": true},
+  {"id": "AL4", "f": "Altruism", "t": "Tôi nghĩ khó khăn của người lạ là việc của họ, không phải việc của tôi.", "r": true}
+];
+
+const OBS_ITEMS = [
+  {"id": "OH1", "f": "Sincerity", "t": "[Tên] nói tốt về cấp trên khi có mặt họ, nhưng nói khác khi họ vắng mặt.", "r": true},
+  {"id": "OH2", "f": "Sincerity", "t": "[Tên] đổi cách nói về cùng một vấn đề tuỳ theo người nghe là ai.", "r": true},
+  {"id": "OH3", "f": "Sincerity", "t": "[Tên] nói thẳng với tôi rằng mình nghĩ khác, cả khi biết tôi không muốn nghe.", "r": false, "vt": true},
+  {"id": "OH4", "f": "Sincerity", "t": "[Tên] cư xử với người không giúp được gì cho mình (bảo vệ, tài xế, thực tập sinh) giống như với người có quyền.", "r": false},
+  {"id": "OH5", "f": "Fairness", "t": "Khi có sai sót trong phần việc của mình, [Tên] tự báo trước khi người khác phát hiện.", "r": false},
+  {"id": "OH6", "f": "Fairness", "t": "[Tên] nhận về mình phần việc mà người khác đã làm hoặc cùng làm.", "r": true},
+  {"id": "OH7", "f": "Fairness", "t": "[Tên] giữ đúng quy trình (chứng từ, phê duyệt, chi phí) cả khi đang gấp và đi tắt sẽ nhanh hơn.", "r": false},
+  {"id": "OH8", "f": "Fairness", "t": "[Tên] trình bày số liệu hoặc kết quả theo cách làm chúng trông tốt hơn thực tế.", "r": true},
+  {"id": "OH9", "f": "Greed Avoidance", "t": "[Tên] hỏi về lương, thưởng, chức danh nhiều hơn hỏi về nội dung công việc.", "r": true},
+  {"id": "OH10", "f": "Greed Avoidance", "t": "[Tên] nhắc tới đồ hiệu, xe, nhà hay mức sống của mình hoặc của người khác.", "r": true},
+  {"id": "OH11", "f": "Greed Avoidance", "t": "Khi được phép chọn, [Tên] chọn phương án tiết kiệm (vé, khách sạn, thiết bị) thay vì phương án đắt hơn.", "r": false},
+  {"id": "OH12", "f": "Greed Avoidance", "t": "[Tên] nhường hoặc không màng các đặc quyền nhỏ (chỗ ngồi, quà tặng, suất đi sự kiện) mà người khác thường muốn.", "r": false},
+  {"id": "OH13", "f": "Modesty", "t": "[Tên] nhắc tới chức danh, thành tích hay người quen có vị thế khi trò chuyện.", "r": true},
+  {"id": "OH14", "f": "Modesty", "t": "Khi được khen trước tập thể, [Tên] nêu tên những người cùng làm.", "r": false},
+  {"id": "OH15", "f": "Modesty", "t": "[Tên] tỏ ra khó chịu khi không được mời họp hoặc không được hỏi ý kiến như người cùng cấp.", "r": true},
+  {"id": "OH16", "f": "Modesty", "t": "[Tên] làm những việc \"nhỏ\" (dọn phòng họp, ghi biên bản, pha nước cho khách) mà không coi là dưới tầm mình.", "r": false, "vt": true},
+  {"id": "OE1", "f": "Fearfulness", "t": "Khi đi team building, [Tên] ngại hoặc từ chối các hoạt động có rủi ro thể chất.", "r": false},
+  {"id": "OE2", "f": "Fearfulness", "t": "[Tên] kể về những hoạt động mạo hiểm mình tham gia (đi phượt, lặn, leo núi, thể thao đối kháng).", "r": true},
+  {"id": "OE3", "f": "Fearfulness", "t": "[Tên] đổi lịch hoặc phương tiện vì lo ngại an toàn khi di chuyển (mưa lớn, đường đêm).", "r": false},
+  {"id": "OE4", "f": "Fearfulness", "t": "Khi có sự cố ở văn phòng (người ngất, chập điện, tai nạn nhỏ), [Tên] là người lao vào xử lý trước.", "r": true},
+  {"id": "OE5", "f": "Anxiety", "t": "Trước hạn chót hay buổi trình bày quan trọng, [Tên] kiểm tra lại hoặc hỏi lại nhiều hơn mức cần.", "r": false},
+  {"id": "OE6", "f": "Anxiety", "t": "Khi chưa nhận được phản hồi về việc mình đã gửi, [Tên] nhắn hỏi lại dồn dập.", "r": false},
+  {"id": "OE7", "f": "Anxiety", "t": "Khi dự án gặp sự cố, [Tên] vẫn nói năng và làm việc với nhịp bình thường.", "r": true},
+  {"id": "OE8", "f": "Anxiety", "t": "[Tên] bình thản khi thông tin còn chưa rõ (kế hoạch có thể đổi, kết quả chưa chốt).", "r": true},
+  {"id": "OE9", "f": "Dependence", "t": "Khi gặp việc khó, [Tên] tìm người để tâm sự hoặc xin động viên, không chỉ để xin cách làm.", "r": false},
+  {"id": "OE10", "f": "Dependence", "t": "[Tên] muốn có người đi cùng khi làm một việc lần đầu (gặp khách mới, trình bày trước nhóm lạ).", "r": false, "vt": true},
+  {"id": "OE11", "f": "Dependence", "t": "Khi có chuyện không vui, [Tên] giữ cho riêng mình và tự vượt qua.", "r": true},
+  {"id": "OE12", "f": "Dependence", "t": "Khi được hỏi thăm lúc đang gặp khó, [Tên] nói rằng mình ổn và tự lo được.", "r": true},
+  {"id": "OE13", "f": "Sentimentality", "t": "[Tên] xúc động rõ trong các dịp chia tay, cảm ơn hay kỷ niệm của công ty.", "r": false},
+  {"id": "OE14", "f": "Sentimentality", "t": "[Tên] giữ lại và nhắc tới quà, thiệp, ảnh kỷ niệm từ đồng nghiệp.", "r": false},
+  {"id": "OE15", "f": "Sentimentality", "t": "Trong những buổi nhiều người xúc động, [Tên] giữ vẻ bình thản.", "r": true},
+  {"id": "OE16", "f": "Sentimentality", "t": "Khi một đồng nghiệp thân nghỉ việc hay chuyển đi, [Tên] tiếp tục như thường và ít nhắc lại.", "r": true},
+  {"id": "OX1", "f": "Social Self-Esteem", "t": "Khi được hỏi, [Tên] nói về điểm mạnh của mình một cách tự nhiên.", "r": false},
+  {"id": "OX2", "f": "Social Self-Esteem", "t": "Trước khi bắt đầu một việc, [Tên] tự hạ thấp mình (\"chắc em làm không tốt\", \"em không giỏi cái này\").", "r": true},
+  {"id": "OX3", "f": "Social Self-Esteem", "t": "Khi trò chuyện, [Tên] so sánh mình kém hơn đồng nghiệp.", "r": true},
+  {"id": "OX4", "f": "Social Self-Esteem", "t": "[Tên] nhận lời khen một cách thoải mái, không gạt đi.", "r": false},
+  {"id": "OX5", "f": "Social Boldness", "t": "[Tên] phản biện trực tiếp trong cuộc họp có người cấp cao hơn.", "r": false, "vt": true},
+  {"id": "OX6", "f": "Social Boldness", "t": "Khi được đề nghị trình bày trước nhóm lớn, [Tên] tìm cách tránh.", "r": true},
+  {"id": "OX7", "f": "Social Boldness", "t": "Ở sự kiện, [Tên] chủ động bắt chuyện với khách, đối tác hoặc người lạ.", "r": false},
+  {"id": "OX8", "f": "Social Boldness", "t": "[Tên] nhờ người khác nói hộ những điều khó (từ chối, nhắc việc, báo tin xấu).", "r": true},
+  {"id": "OX9", "f": "Sociability", "t": "[Tên] tham gia các buổi ăn uống, tụ tập của công ty khi không bắt buộc.", "r": false},
+  {"id": "OX10", "f": "Sociability", "t": "[Tên] bắt chuyện phiếm với đồng nghiệp trong giờ nghỉ.", "r": false},
+  {"id": "OX11", "f": "Sociability", "t": "Khi có lựa chọn, [Tên] ăn trưa một mình hoặc làm việc tách riêng.", "r": true},
+  {"id": "OX12", "f": "Sociability", "t": "Khi cả hai bên đều tiện, [Tên] chọn trao đổi qua tin nhắn thay vì gặp mặt hay gọi điện.", "r": true},
+  {"id": "OX13", "f": "Liveliness", "t": "[Tên] mang không khí vui vẻ, có năng lượng vào cuộc họp.", "r": false},
+  {"id": "OX14", "f": "Liveliness", "t": "[Tên] tỏ ra hào hứng rõ khi được giao việc mới.", "r": false},
+  {"id": "OX15", "f": "Liveliness", "t": "[Tên] phản ứng khá trầm trước tin vui của nhóm.", "r": true},
+  {"id": "OX16", "f": "Liveliness", "t": "Đồng nghiệp mô tả [Tên] là người trầm, ít biểu lộ.", "r": true},
+  {"id": "OA1", "f": "Forgivingness", "t": "Sau một va chạm với đồng nghiệp, [Tên] hợp tác lại bình thường trong vòng vài ngày.", "r": false},
+  {"id": "OA2", "f": "Forgivingness", "t": "[Tên] nhắc lại chuyện cũ khi ai đó từng làm mình thiệt.", "r": true},
+  {"id": "OA3", "f": "Forgivingness", "t": "Sau khi từng có mâu thuẫn, [Tên] tránh làm việc với người đó.", "r": true},
+  {"id": "OA4", "f": "Forgivingness", "t": "Khi được xin lỗi, [Tên] bỏ qua và không nhắc lại.", "r": false},
+  {"id": "OA5", "f": "Gentleness", "t": "Khi nhận xét việc của đồng nghiệp, [Tên] dùng lời nặng hơn mức cần để nói rõ vấn đề.", "r": true},
+  {"id": "OA6", "f": "Gentleness", "t": "Khi có người mắc lỗi, [Tên] hỏi nguyên nhân trước khi nhận xét.", "r": false},
+  {"id": "OA7", "f": "Gentleness", "t": "[Tên] góp ý riêng thay vì nói trước mặt nhiều người.", "r": false},
+  {"id": "OA8", "f": "Gentleness", "t": "[Tên] chê năng lực của một người với người thứ ba.", "r": true},
+  {"id": "OA9", "f": "Flexibility", "t": "Trong tranh luận, [Tên] chấp nhận phương án ở giữa hoặc phương án của người khác.", "r": false},
+  {"id": "OA10", "f": "Flexibility", "t": "[Tên] tiếp tục bảo vệ cách của mình sau khi nhóm đã quyết theo hướng khác.", "r": true},
+  {"id": "OA11", "f": "Flexibility", "t": "Khi được góp ý, [Tên] đổi cách làm mà không cần thuyết phục nhiều lần.", "r": false},
+  {"id": "OA12", "f": "Flexibility", "t": "Khi bị phản bác, [Tên] đáp lại ngay bằng lý lẽ để giữ quan điểm.", "r": true},
+  {"id": "OA13", "f": "Patience", "t": "[Tên] lên giọng hoặc tỏ ra bực khi người khác làm chậm việc của mình.", "r": true},
+  {"id": "OA14", "f": "Patience", "t": "[Tên] giữ bình tĩnh khi bị ngắt lời hoặc bị hỏi đi hỏi lại.", "r": false},
+  {"id": "OA15", "f": "Patience", "t": "Khi khách hàng hay đối tác khó chịu, [Tên] giữ giọng điềm tĩnh.", "r": false},
+  {"id": "OA16", "f": "Patience", "t": "Tin nhắn hoặc email của [Tên] lộ rõ sự bực bội khi có việc không như ý.", "r": true},
+  {"id": "OC1", "f": "Organization", "t": "Tài liệu, file của [Tên] được đặt tên và sắp xếp để người khác tìm được ngay.", "r": false},
+  {"id": "OC2", "f": "Organization", "t": "Khi được hỏi tiến độ, [Tên] có sẵn kế hoạch hoặc danh sách việc rõ ràng.", "r": false},
+  {"id": "OC3", "f": "Organization", "t": "[Tên] phải tìm lâu mới đưa ra được tài liệu hay số liệu mình đang giữ.", "r": true},
+  {"id": "OC4", "f": "Organization", "t": "Thư mục chung hoặc khu vực do [Tên] quản lý trở nên lộn xộn.", "r": true},
+  {"id": "OC5", "f": "Diligence", "t": "[Tên] làm thêm những phần không ai yêu cầu để kết quả tốt hơn.", "r": false},
+  {"id": "OC6", "f": "Diligence", "t": "Với việc khó, [Tên] theo tới cùng thay vì bỏ dở hoặc chuyển cho người khác.", "r": false},
+  {"id": "OC7", "f": "Diligence", "t": "[Tên] bắt đầu các việc lớn khi đã sát hạn chót.", "r": true},
+  {"id": "OC8", "f": "Diligence", "t": "Khi gặp trở ngại, [Tên] dừng lại chờ người khác gỡ thay vì tự tìm cách.", "r": true, "vt": true},
+  {"id": "OC9", "f": "Perfectionism", "t": "Sản phẩm [Tên] gửi đi sạch lỗi số liệu và chính tả.", "r": false},
+  {"id": "OC10", "f": "Perfectionism", "t": "[Tên] tự rà lại và sửa chi tiết nhỏ trước khi gửi, dù không ai yêu cầu.", "r": false},
+  {"id": "OC11", "f": "Perfectionism", "t": "[Tên] gửi bản chưa kiểm tra, để người nhận tự phát hiện lỗi.", "r": true},
+  {"id": "OC12", "f": "Perfectionism", "t": "[Tên] bỏ qua lỗi trình bày nhỏ và nói rằng chúng không quan trọng.", "r": true},
+  {"id": "OC13", "f": "Prudence", "t": "Trước khi nhận việc mới, [Tên] hỏi rõ phạm vi và thời hạn.", "r": false},
+  {"id": "OC14", "f": "Prudence", "t": "Trước khi đề xuất một quyết định, [Tên] nêu các rủi ro hoặc kịch bản xấu.", "r": false},
+  {"id": "OC15", "f": "Prudence", "t": "[Tên] cam kết ngay trong cuộc họp, rồi sau đó phải xin lùi hạn hoặc thu hẹp phạm vi.", "r": true},
+  {"id": "OC16", "f": "Prudence", "t": "[Tên] trả lời gay gắt khi đang bực, rồi sau đó phải đính chính.", "r": true},
+  {"id": "OO1", "f": "Aesthetic Appreciation", "t": "[Tên] chăm chút hình thức (bố cục, màu sắc, font) của tài liệu hay slide mình làm.", "r": false},
+  {"id": "OO2", "f": "Aesthetic Appreciation", "t": "[Tên] kể về triển lãm, buổi hoà nhạc, bộ phim hay cảnh đẹp mà mình thích.", "r": false},
+  {"id": "OO3", "f": "Aesthetic Appreciation", "t": "[Tên] coi hình thức trình bày là không đáng mất thời gian, miễn nội dung đúng.", "r": true},
+  {"id": "OO4", "f": "Aesthetic Appreciation", "t": "Khi nhóm bàn về thiết kế văn phòng, logo hay giao diện, [Tên] tỏ ra không mấy quan tâm.", "r": true},
+  {"id": "OO5", "f": "Inquisitiveness", "t": "[Tên] hỏi \"tại sao\" hay \"cái này vận hành thế nào\" về những việc ngoài phạm vi của mình.", "r": false},
+  {"id": "OO6", "f": "Inquisitiveness", "t": "[Tên] chia sẻ bài đọc, khoá học hay kiến thức mới mà mình tự tìm hiểu.", "r": false},
+  {"id": "OO7", "f": "Inquisitiveness", "t": "[Tên] chỉ tìm hiểu tới mức đủ để hoàn thành việc được giao.", "r": true},
+  {"id": "OO8", "f": "Inquisitiveness", "t": "Khi có người giới thiệu một chủ đề mới không liên quan trực tiếp tới việc, [Tên] tỏ ra ít quan tâm.", "r": true},
+  {"id": "OO9", "f": "Creativity", "t": "[Tên] đề xuất cách làm mới cho một quy trình đang chạy.", "r": false},
+  {"id": "OO10", "f": "Creativity", "t": "Khi được hỏi, [Tên] đưa ra nhiều phương án chứ không chỉ một.", "r": false},
+  {"id": "OO11", "f": "Creativity", "t": "[Tên] làm lại theo cách cũ, kể cả khi có cơ hội thử cách khác.", "r": true},
+  {"id": "OO12", "f": "Creativity", "t": "Trong buổi brainstorm, [Tên] chủ yếu nhận xét ý người khác hơn là đưa ra ý mới.", "r": true},
+  {"id": "OO13", "f": "Unconventionality", "t": "[Tên] nghe nghiêm túc những ý tưởng mà nhiều người cho là kỳ quặc.", "r": false},
+  {"id": "OO14", "f": "Unconventionality", "t": "[Tên] chủ động thử công cụ hoặc cách làm mà chưa ai trong công ty dùng.", "r": false},
+  {"id": "OO15", "f": "Unconventionality", "t": "[Tên] bác một đề xuất vì \"chưa ai làm vậy\" hoặc \"không giống cách thường làm\".", "r": true},
+  {"id": "OO16", "f": "Unconventionality", "t": "[Tên] chê bai những người có lối sống hoặc cách ăn mặc khác thường.", "r": true},
+  {"id": "OAL1", "f": "Altruism", "t": "[Tên] dành thời gian giúp người mới, dù việc đó không được tính vào kết quả của mình.", "r": false},
+  {"id": "OAL2", "f": "Altruism", "t": "Khi thấy một đồng nghiệp yếu thế bị đối xử không công bằng, [Tên] lên tiếng hoặc giúp đỡ.", "r": false},
+  {"id": "OAL3", "f": "Altruism", "t": "[Tên] chỉ giúp khi việc đó liên quan tới phần việc hay mục tiêu của mình.", "r": true},
+  {"id": "OAL4", "f": "Altruism", "t": "Khi công ty có quyên góp hay hoạt động thiện nguyện, [Tên] đứng ngoài.", "r": true}
+];
+
+
+const FACTORS = [
+  { k: "H", name: "Trung thực–Khiêm nhường", facets: ["Sincerity", "Fairness", "Greed Avoidance", "Modesty"] },
+  { k: "E", name: "Cảm xúc", facets: ["Fearfulness", "Anxiety", "Dependence", "Sentimentality"] },
+  { k: "X", name: "Hướng ngoại", facets: ["Social Self-Esteem", "Social Boldness", "Sociability", "Liveliness"] },
+  { k: "A", name: "Dễ chịu (đối lập với Nóng giận)", facets: ["Forgivingness", "Gentleness", "Flexibility", "Patience"] },
+  { k: "C", name: "Tận tâm", facets: ["Organization", "Diligence", "Perfectionism", "Prudence"] },
+  { k: "O", name: "Cởi mở với trải nghiệm", facets: ["Aesthetic Appreciation", "Inquisitiveness", "Creativity", "Unconventionality"] },
+];
+const ALTRUISM = "Altruism";
+const ALL_FACETS = FACTORS.flatMap(f => f.facets).concat(ALTRUISM);
+
+const FACET_VI = {
+  "Sincerity": "Chân thành", "Fairness": "Công bằng", "Greed Avoidance": "Không chạy theo vật chất", "Modesty": "Khiêm tốn",
+  "Fearfulness": "Ngại rủi ro thể chất", "Anxiety": "Lo âu", "Dependence": "Cần chỗ dựa", "Sentimentality": "Đa cảm",
+  "Social Self-Esteem": "Tự tin xã hội", "Social Boldness": "Mạnh dạn", "Sociability": "Thích giao du", "Liveliness": "Hoạt bát",
+  "Forgivingness": "Dễ bỏ qua", "Gentleness": "Ôn hoà", "Flexibility": "Linh hoạt", "Patience": "Kiên nhẫn",
+  "Organization": "Ngăn nắp", "Diligence": "Chăm chỉ", "Perfectionism": "Cầu toàn", "Prudence": "Thận trọng",
+  "Aesthetic Appreciation": "Cảm thụ thẩm mỹ", "Inquisitiveness": "Ham hiểu biết", "Creativity": "Sáng tạo", "Unconventionality": "Khác lối mòn",
+  "Altruism": "Vị tha",
+};
+
+const SCALE_SELF = ["Hoàn toàn không đúng", "Không đúng lắm", "Phân vân", "Khá đúng", "Rất đúng"];
+const SCALE_OBS = ["Chưa từng thấy", "Hiếm khi", "Đôi khi", "Thường xuyên", "Hầu như luôn luôn"];
+const NA = 0; // "Chưa có dịp quan sát"
+
+const KINDS = {
+  self: { items: SELF_ITEMS, sheet: "Self", code: "S" },
+  obs: { items: OBS_ITEMS, sheet: "Observer", code: "O" },
+};
+const VT_FACETS = new Set(OBS_ITEMS.filter(i => i.vt).map(i => i.f));
+
+/* ============================================================
+   CHẤM ĐIỂM
+   ============================================================ */
+const round2 = x => Math.round(x * 100) / 100;
+function level(x) {
+  if (x == null) return null;
+  const v = round2(x);
+  return v < 2.5 ? "thấp" : v > 3.5 ? "cao" : "trung bình";
+}
+// answers: {id: 1..5 | 0 (NA)}
+function score(kind, answers) {
+  const items = KINDS[kind].items;
+  const facet = {}, naCount = {};
+  for (const f of ALL_FACETS) {
+    const its = items.filter(i => i.f === f);
+    const vals = [];
+    let na = 0;
+    for (const it of its) {
+      const a = answers[it.id];
+      if (a === NA || a == null) { na++; continue; }
+      vals.push(it.r ? 6 - a : a);
+    }
+    naCount[f] = na;
+    // Quy tắc unknown: ≥ 2 câu "Chưa có dịp" thì facet không chấm
+    facet[f] = (na >= 2 || vals.length === 0) ? null : vals.reduce((s, v) => s + v, 0) / vals.length;
+  }
+  const factor = {};
+  for (const F of FACTORS) {
+    const vals = F.facets.map(f => facet[f]).filter(v => v != null);
+    // Nhân tố cần ít nhất 3/4 facet có điểm
+    factor[F.k] = vals.length >= 3 ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
+  }
+  return { facet, factor, naCount };
+}
+
+/* ============================================================
+   LƯU TRỮ (localStorage, bọc try/catch)
+   ============================================================ */
+const KEY = "tqs6:" + CONFIG.version;
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; }
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(store)); } catch {}
+}
+let store = load();
+store.done = store.done || []; // các bài đã hoàn thành (self và obs)
+
+/* ============================================================
+   MÃ KẾT QUẢ — để so sánh self–observer
+   ============================================================ */
+function digits(kind, answers) {
+  return KINDS[kind].items.map(i => String(answers[i.id] ?? NA)).join("");
+}
+function encode(rec) {
+  const obj = { v: CONFIG.version, k: KINDS[rec.kind].code, n: rec.name, s: rec.subject || "", d: (rec.finishedAt || "").slice(0, 10), a: digits(rec.kind, rec.answers) };
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  let bin = ""; bytes.forEach(b => bin += String.fromCharCode(b));
+  return "TQS6." + btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function decode(code) {
+  let obj;
+  try {
+    const raw = code.trim().replace(/^TQS6\./, "").replace(/-/g, "+").replace(/_/g, "/");
+    const bin = atob(raw + "===".slice((raw.length + 3) % 4));
+    obj = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))));
+  } catch { throw new Error("Mã không hợp lệ hoặc bị cắt thiếu"); }
+  const kind = obj.k === "S" ? "self" : obj.k === "O" ? "obs" : null;
+  const items = kind && KINDS[kind].items;
+  if (!kind || !obj.a || obj.a.length !== items.length || !/^[0-5]+$/.test(obj.a)) throw new Error("Mã không hợp lệ");
+  if (kind === "self" && obj.a.includes("0")) throw new Error("Mã tự khai thiếu câu trả lời");
+  const answers = {};
+  items.forEach((it, idx) => answers[it.id] = Number(obj.a[idx]));
+  return { kind, name: obj.n, subject: obj.s, date: obj.d, version: obj.v, answers };
+}
+
+/* ============================================================
+   TIỆN ÍCH
+   ============================================================ */
+const app = document.getElementById("app");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = x => x == null ? "—" : round2(x).toFixed(2).replace(".", ",");
+const fmtTime = iso => new Date(iso).toLocaleString("vi-VN");
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+const fillName = (t, name) => t.replace(/\[Tên\]/g, name);
+const footer = `<footer>Bộ tự quan sát 6 chiều — dựa trên mô hình HEXACO (Lee &amp; Ashton). Câu hỏi được viết mới, chưa kiểm định. ${CONFIG.version}</footer>`;
+function go(view, arg) { window.scrollTo(0, 0); VIEWS[view](arg); }
+
+/* ============================================================
+   MÀN HÌNH
+   ============================================================ */
+const VIEWS = {};
+
+VIEWS.home = () => {
+  const cur = store.current;
+  const resume = cur ? `
+    <div class="card">
+      <h3>Bài đang làm dở</h3>
+      <p class="note">${cur.kind === "self" ? "Tự đánh giá" : "Đánh giá " + esc(cur.subject)} · đã trả lời ${Object.keys(cur.answers).length}/100 câu</p>
+      <div class="row"><button class="btn" data-act="resume">Làm tiếp</button><button class="btn danger" data-act="drop">Bỏ bài này</button></div>
+    </div>` : "";
+  const done = store.done.length ? `
+    <div class="card">
+      <h3>Bài đã hoàn thành trên máy này</h3>
+      ${store.done.map((d, i) => `
+        <div class="row end" style="padding:8px 0;border-bottom:1px solid var(--line)">
+          <span>${d.kind === "self" ? "Tự đánh giá" : "Đánh giá " + esc(d.subject)} · ${esc(d.name)} · <span class="note">${fmtTime(d.finishedAt)}${d.sent ? " · đã gửi" : ""}</span></span>
+          <button class="btn ghost" data-act="open" data-i="${i}">Xem</button>
+        </div>`).join("")}
+    </div>` : "";
+  app.innerHTML = `
+    <h1>Bộ tự quan sát 6 chiều</h1>
+    <p class="sub">Dựa trên mô hình HEXACO · ${CONFIG.version} · khung tự nhìn lại, chưa phải phép đo</p>
+    ${resume}
+    <div class="choices">
+      <button class="choice" data-act="start" data-kind="self"><strong>Tự đánh giá</strong><span>100 câu về cách bạn thường làm và thường nghĩ.</span><span class="tag">Khoảng 20 phút</span></button>
+      <button class="choice" data-act="start" data-kind="obs"><strong>Đánh giá một người khác</strong><span>100 câu về những gì bạn đã thực sự thấy hoặc nghe người đó làm trong 6 tháng qua.</span><span class="tag">Khoảng 20 phút</span></button>
+      <button class="choice" data-act="compare"><strong>So sánh kết quả</strong><span>Dán mã kết quả của phần tự đánh giá và phần đánh giá từ người khác để xem chênh lệch theo từng facet.</span></button>
+    </div>
+    <div style="height:16px"></div>
+    ${done}
+    ${(store.done.length || cur) ? `<button class="btn danger" data-act="wipe">Xoá toàn bộ dữ liệu trên máy này</button>` : ""}
+    ${footer}`;
+  app.onclick = e => {
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const act = b.dataset.act;
+    if (act === "start") {
+      if (store.current && !confirm("Bạn đang có một bài làm dở. Bắt đầu bài mới sẽ bỏ bài đó. Tiếp tục?")) return;
+      go("setup", b.dataset.kind);
+    }
+    if (act === "resume") go("form");
+    if (act === "drop" && confirm("Bỏ bài đang làm dở?")) { delete store.current; save(); go("home"); }
+    if (act === "open") go("result", store.done[Number(b.dataset.i)]);
+    if (act === "compare") go("compare");
+    if (act === "wipe" && confirm("Xoá mọi câu trả lời và kết quả lưu trên trình duyệt này? Không khôi phục được.")) {
+      store = { done: [] }; save(); go("home");
+    }
+  };
+};
+
+VIEWS.setup = kind => {
+  const isSelf = kind === "self";
+  app.innerHTML = `
+    <p><button class="btn ghost" data-act="back">← Quay lại</button></p>
+    <h1>${isSelf ? "Tự đánh giá" : "Đánh giá một người khác"}</h1>
+    <p class="sub">100 câu · khoảng 20 phút · câu hỏi được xáo trộn</p>
+    <div class="intro" id="intro"></div>
+    <div class="card">
+      <label class="field"><span>Tên của bạn</span><input type="text" id="name" autocomplete="name" value="${esc(store.lastName || "")}"></label>
+      ${isSelf ? "" : `<label class="field"><span>Tên người bạn đánh giá</span><input type="text" id="subject" autocomplete="off"></label>`}
+      <button class="btn" data-act="go">Bắt đầu</button>
+      <div class="status err" id="err"></div>
+    </div>
+    ${footer}`;
+  const intro = document.getElementById("intro");
+  const renderIntro = () => {
+    if (isSelf) {
+      intro.innerHTML = `
+        <p>Mỗi câu mô tả một cách làm hay cách nghĩ. Chọn mức đúng với <strong>bạn thường làm</strong>, không phải điều bạn muốn mình làm. Không có câu đúng sai, không có điểm "tốt".</p>
+        <p>Câu trả lời được lưu trên trình duyệt của bạn trong lúc làm, nên bạn có thể dừng và quay lại sau. Làm xong, bạn xem kết quả trước. Chỉ khi bạn bấm <strong>Gửi</strong>, câu trả lời và kết quả mới được gửi cho ${esc(CONFIG.owner)}.</p>`;
+    } else {
+      const s = (document.getElementById("subject")?.value.trim()) || "người đó";
+      intro.innerHTML = `
+        <p>Nghĩ về <strong>${esc(s)}</strong> trong 6 tháng qua. Với mỗi câu, chọn mức bạn <strong>đã thực sự thấy hoặc nghe</strong>, không phải điều bạn đoán.</p>
+        <p>Nếu chưa từng ở trong tình huống đó cùng họ, chọn "Chưa có dịp quan sát". Nếu chỉ nghe người khác kể lại, cũng chọn "Chưa có dịp quan sát". Những câu này là dữ liệu, không phải chỗ trống cần lấp.</p>
+        <p>"Tôi" trong câu là bạn, người chấm. Làm xong, bạn xem kết quả trước. Chỉ khi bạn bấm <strong>Gửi</strong>, câu trả lời mới được gửi cho ${esc(CONFIG.owner)}, để so sánh với phần tự đánh giá của ${esc(s)}.</p>`;
+    }
+  };
+  renderIntro();
+  document.getElementById("subject")?.addEventListener("input", renderIntro);
+  app.onclick = e => {
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    if (b.dataset.act === "back") return go("home");
+    const name = document.getElementById("name").value.trim();
+    const subject = isSelf ? "" : document.getElementById("subject").value.trim();
+    if (!name || (!isSelf && !subject)) { document.getElementById("err").textContent = isSelf ? "Nhập tên của bạn." : "Nhập tên của bạn và tên người được đánh giá."; return; }
+    store.lastName = name;
+    store.current = { id: uid(), kind, name, subject, order: shuffle(KINDS[kind].items.map(i => i.id)), answers: {}, page: 0, startedAt: new Date().toISOString() };
+    save(); go("form");
+  };
+};
+
+VIEWS.form = () => {
+  const cur = store.current;
+  if (!cur) return go("home");
+  const isSelf = cur.kind === "self";
+  const byId = Object.fromEntries(KINDS[cur.kind].items.map(i => [i.id, i]));
+  const pages = Math.ceil(cur.order.length / CONFIG.pageSize);
+  const ids = cur.order.slice(cur.page * CONFIG.pageSize, (cur.page + 1) * CONFIG.pageSize);
+  const labels = isSelf ? SCALE_SELF : SCALE_OBS;
+  const answered = Object.keys(cur.answers).length;
+  app.innerHTML = `
+    <div class="progress">
+      <div class="meta"><span>${isSelf ? "Tự đánh giá" : "Đánh giá " + esc(cur.subject)} · trang ${cur.page + 1}/${pages}</span><span>${answered}/100 câu</span></div>
+      <div class="track"><div style="width:${answered}%"></div></div>
+    </div>
+    ${cur.page === 0 && !isSelf ? `<p class="note">Nghĩ về ${esc(cur.subject)} trong 6 tháng qua. Chọn điều bạn đã thực sự thấy hoặc nghe.</p>` : ""}
+    ${ids.map((id, k) => {
+      const it = byId[id], a = cur.answers[id];
+      const n = cur.page * CONFIG.pageSize + k + 1;
+      return `<div class="item" data-id="${id}">
+        <div class="q"><b>${n}.</b>${esc(isSelf ? it.t : fillName(it.t, cur.subject))}</div>
+        <div class="opts${isSelf ? "" : " with-na"}">
+          ${labels.map((l, v) => `<button class="opt${a === v + 1 ? " on" : ""}" data-v="${v + 1}"><span class="n">${v + 1}</span><span>${l}</span></button>`).join("")}
+          ${isSelf ? "" : `<button class="opt na${a === NA ? " on" : ""}" data-v="0">Chưa có dịp quan sát</button>`}
+        </div>
+      </div>`;
+    }).join("")}
+    <div class="row end" style="margin-top:20px">
+      <button class="btn ghost" data-act="prev">${cur.page === 0 ? "← Trang chủ" : "← Trang trước"}</button>
+      <button class="btn" data-act="next">${cur.page === pages - 1 ? "Xem kết quả" : "Trang tiếp →"}</button>
+    </div>
+    <div class="status err" id="err"></div>
+    ${footer}`;
+  app.onclick = e => {
+    const opt = e.target.closest(".opt");
+    if (opt) {
+      const item = opt.closest(".item");
+      cur.answers[item.dataset.id] = Number(opt.dataset.v);
+      item.querySelectorAll(".opt").forEach(o => o.classList.toggle("on", o === opt));
+      item.classList.remove("missing");
+      const n = Object.keys(cur.answers).length;
+      app.querySelector(".track > div").style.width = n + "%";
+      app.querySelector(".progress .meta span:last-child").textContent = n + "/100 câu";
+      save(); return;
+    }
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    if (b.dataset.act === "prev") {
+      if (cur.page === 0) return go("home");
+      cur.page--; save(); return go("form");
+    }
+    const missing = ids.filter(id => cur.answers[id] == null);
+    if (missing.length) {
+      missing.forEach(id => app.querySelector(`.item[data-id="${id}"]`).classList.add("missing"));
+      document.getElementById("err").textContent = `Còn ${missing.length} câu chưa trả lời trên trang này.`;
+      app.querySelector(`.item[data-id="${missing[0]}"]`).scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    if (cur.page < pages - 1) { cur.page++; save(); return go("form"); }
+    const rec = { id: cur.id, kind: cur.kind, name: cur.name, subject: cur.subject, answers: cur.answers, startedAt: cur.startedAt, finishedAt: new Date().toISOString(), sent: false };
+    store.done.unshift(rec);
+    delete store.current;
+    save(); go("result", rec);
+  };
+};
+
+function profileHTML(kind, answers) {
+  const sc = score(kind, answers);
+  const bar = x => x == null ? `<div class="scale"><div class="band"></div></div>` :
+    `<div class="scale"><div class="band"></div><div class="fill" style="width:${((x - 1) / 4) * 100}%"></div></div>`;
+  const lvl = x => x == null ? `<span class="lvl">không chấm</span>` : `<span class="lvl ${level(x) === "cao" ? "cao" : level(x) === "thấp" ? "thap" : ""}">${level(x)}</span>`;
+  const facetRow = f => `<div class="facet"><div class="nm">${FACET_VI[f]}<small>${f}${kind === "obs" && sc.naCount[f] ? ` · ${sc.naCount[f]} câu chưa có dịp` : ""}</small></div>${bar(sc.facet[f])}<div class="val">${fmt(sc.facet[f])}</div></div>`;
+  return FACTORS.map(F => `
+    <div class="factor">
+      <div class="head"><h3>${F.k} · ${F.name}</h3><div class="row"><span class="score">${fmt(sc.factor[F.k])}</span>${lvl(sc.factor[F.k])}</div></div>
+      ${F.facets.map(facetRow).join("")}
+    </div>`).join("") + `
+    <div class="factor">
+      <div class="head"><h3>Vị tha <span class="note">(Altruism, facet trung gian)</span></h3><div class="row"><span class="score">${fmt(sc.facet[ALTRUISM])}</span>${lvl(sc.facet[ALTRUISM])}</div></div>
+      ${facetRow(ALTRUISM)}
+    </div>`;
+}
+
+function summaryText(rec) {
+  const sc = score(rec.kind, rec.answers);
+  const L = [];
+  L.push("Bộ tự quan sát 6 chiều — dựa trên mô hình HEXACO · " + CONFIG.version);
+  L.push(rec.kind === "self" ? `Tự đánh giá: ${rec.name}` : `Người chấm: ${rec.name} · Người được đánh giá: ${rec.subject}`);
+  L.push("Hoàn thành: " + fmtTime(rec.finishedAt));
+  L.push("");
+  for (const F of FACTORS) {
+    L.push(`${F.k} · ${F.name}: ${fmt(sc.factor[F.k])}${sc.factor[F.k] != null ? " (" + level(sc.factor[F.k]) + ")" : ""}`);
+    for (const f of F.facets) L.push(`   ${FACET_VI[f]} (${f}): ${fmt(sc.facet[f])}`);
+  }
+  L.push(`Vị tha (Altruism): ${fmt(sc.facet[ALTRUISM])}`);
+  L.push("");
+  L.push("Thang 1–5. Thấp < 2,5 · trung bình 2,5–3,5 · cao > 3,5. So với điểm giữa thang, không so với ai.");
+  L.push("Chưa kiểm định: đây là khung tự nhìn lại, không phải phép đo.");
+  L.push("");
+  L.push("Mã kết quả: " + encode(rec));
+  return L.join("\n");
+}
+
+VIEWS.result = rec => {
+  const isSelf = rec.kind === "self";
+  const code = encode(rec);
+  const canSend = !!CONFIG.endpoint;
+  app.innerHTML = `
+    <p><button class="btn ghost" data-act="home">← Trang chủ</button></p>
+    <h1>${isSelf ? "Kết quả tự đánh giá" : "Kết quả đánh giá " + esc(rec.subject)}</h1>
+    <p class="sub">${isSelf ? esc(rec.name) : "Người chấm: " + esc(rec.name)} · ${fmtTime(rec.finishedAt)}</p>
+    <div class="caveat">
+      ${isSelf
+        ? "Đây là lời bạn tự nói về mình, không phải hành vi đã được quan sát. Bộ câu hỏi chưa được kiểm định, nên hãy đọc kết quả như một khung để tự nhìn lại, không phải một phép đo."
+        : "Đây là những gì một người quan sát thấy, trong bối cảnh và vai trò của họ. Facet có từ 2 câu \"Chưa có dịp quan sát\" trở lên thì không chấm."}
+      Điểm được so với điểm giữa thang (3), không so với ai khác.
+    </div>
+    <p class="legend">Thang 1–5. Vùng tô nhạt là mức trung bình (2,5–3,5). Thấp &lt; 2,5 · cao &gt; 3,5.</p>
+    ${profileHTML(rec.kind, rec.answers)}
+    <div class="card" style="margin-top:24px">
+      <h2>Gửi kết quả</h2>
+      <p>Bấm <strong>Gửi cho ${esc(CONFIG.owner)}</strong> để gửi toàn bộ câu trả lời và điểm ở trên. Bạn có thể chọn không gửi.</p>
+      <div class="row">
+        <button class="btn" data-act="send" ${canSend ? "" : "disabled"}>${rec.sent ? "Đã gửi · gửi lại" : "Gửi cho " + esc(CONFIG.owner)}</button>
+        <button class="btn secondary" data-act="dl">Tải tóm tắt (.txt)</button>
+      </div>
+      <div class="status ${rec.sent ? "ok" : ""}" id="status">${canSend ? (rec.sent ? "Đã gửi lúc " + fmtTime(rec.sentAt) + "." : "") : "Chức năng gửi chưa được cấu hình."}</div>
+    </div>
+    <div class="card">
+      <h3>Mã kết quả</h3>
+      <p class="note">Mã này chứa câu trả lời của bạn. Dùng ở màn hình "So sánh kết quả".</p>
+      <textarea readonly id="code">${code}</textarea>
+      <div class="row" style="margin-top:8px"><button class="btn ghost" data-act="copy">Sao chép mã</button></div>
+    </div>
+    ${footer}`;
+  app.onclick = async e => {
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const act = b.dataset.act;
+    if (act === "home") return go("home");
+    if (act === "copy") {
+      const ta = document.getElementById("code"); ta.select();
+      try { await navigator.clipboard.writeText(code); } catch { document.execCommand("copy"); }
+      b.textContent = "Đã sao chép"; return;
+    }
+    if (act === "dl") {
+      const blob = new Blob([summaryText(rec)], { type: "text/plain;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `tu-quan-sat-6-chieu_${isSelf ? "tu-danh-gia" : "danh-gia"}_${(isSelf ? rec.name : rec.subject).replace(/\s+/g, "-")}.txt`;
+      a.click(); URL.revokeObjectURL(a.href); return;
+    }
+    if (act === "send") {
+      if (rec.sent && !confirm("Kết quả này đã được gửi. Gửi lại?")) return;
+      const st = document.getElementById("status");
+      b.disabled = true; st.className = "status"; st.textContent = "Đang gửi…";
+      try {
+        const res = await fetch(CONFIG.endpoint, { method: "POST", body: JSON.stringify(buildPayload(rec, code)) });
+        const out = await res.json();
+        if (!out.ok) throw new Error(out.error || "lỗi máy chủ");
+        rec.sent = true; rec.sentAt = new Date().toISOString(); save();
+        st.className = "status ok"; st.textContent = out.duplicate ? "Kết quả này đã có trong bảng, không ghi thêm." : "Đã gửi. Cảm ơn bạn.";
+        b.textContent = "Đã gửi · gửi lại";
+      } catch (err) {
+        st.className = "status err";
+        st.textContent = "Chưa gửi được (" + err.message + "). Bạn thử lại sau, hoặc sao chép mã kết quả bên dưới và gửi trực tiếp cho " + CONFIG.owner + ".";
+      } finally { b.disabled = false; }
+    }
+  };
+};
+
+function buildPayload(rec, code) {
+  const sc = score(rec.kind, rec.answers);
+  const isSelf = rec.kind === "self";
+  const row = {
+    "ID": rec.id,
+    "Thời gian gửi": new Date().toISOString(),
+    "Phiên bản": CONFIG.version,
+    [isSelf ? "Người làm" : "Người chấm"]: rec.name,
+  };
+  if (!isSelf) row["Người được đánh giá"] = rec.subject;
+  row["Bắt đầu"] = rec.startedAt;
+  row["Hoàn thành"] = rec.finishedAt;
+  row["Thời lượng (phút)"] = Math.round((new Date(rec.finishedAt) - new Date(rec.startedAt)) / 60000);
+  if (!isSelf) row["Số câu chưa có dịp"] = Object.values(rec.answers).filter(v => v === NA).length;
+  for (const F of FACTORS) row[F.k] = sc.factor[F.k] == null ? "" : round2(sc.factor[F.k]);
+  for (const f of ALL_FACETS) row[f] = sc.facet[f] == null ? "" : round2(sc.facet[f]);
+  for (const it of KINDS[rec.kind].items) {
+    const a = rec.answers[it.id];
+    row[it.id] = a === NA ? "NA" : a;
+  }
+  row["Mã kết quả"] = code;
+  return { token: CONFIG.token, sheet: KINDS[rec.kind].sheet, row };
+}
+
+VIEWS.compare = () => {
+  const local = store.done;
+  app.innerHTML = `
+    <p><button class="btn ghost" data-act="home">← Trang chủ</button></p>
+    <h1>So sánh kết quả</h1>
+    <p class="sub">Một bài tự đánh giá so với một hoặc nhiều bài đánh giá từ người khác, ở cấp facet.</p>
+    <div class="card">
+      <label class="field"><span>Dán mã kết quả, mỗi mã một dòng</span>
+        <textarea id="codes" placeholder="TQS6.…"></textarea></label>
+      ${local.length ? `<p class="note">Hoặc thêm bài đã làm trên máy này:</p><div class="row" style="margin-bottom:12px">${local.map((d, i) =>
+        `<button class="btn ghost" data-act="add" data-i="${i}">${d.kind === "self" ? "Tự đánh giá · " + esc(d.name) : esc(d.name) + " → " + esc(d.subject)}</button>`).join("")}</div>` : ""}
+      <button class="btn" data-act="run">So sánh</button>
+      <div class="status err" id="err"></div>
+    </div>
+    <div id="out"></div>
+    ${footer}`;
+  app.onclick = e => {
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const ta = document.getElementById("codes");
+    if (b.dataset.act === "home") return go("home");
+    if (b.dataset.act === "add") { ta.value = (ta.value.trim() + "\n" + encode(local[Number(b.dataset.i)])).trim(); return; }
+    const err = document.getElementById("err"); err.textContent = "";
+    const recs = [];
+    for (const [n, line] of ta.value.split(/\s+/).filter(Boolean).entries()) {
+      try { recs.push(decode(line)); } catch (x) { err.textContent = `Mã thứ ${n + 1} không đọc được: ${x.message}.`; return; }
+    }
+    const selfs = recs.filter(r => r.kind === "self"), obs = recs.filter(r => r.kind === "obs");
+    if (selfs.length !== 1) { err.textContent = `Cần đúng một mã tự đánh giá (đang có ${selfs.length}).`; return; }
+    if (!obs.length) { err.textContent = "Cần ít nhất một mã đánh giá từ người khác."; return; }
+    document.getElementById("out").innerHTML = compareHTML(selfs[0], obs);
+  };
+};
+
+function compareHTML(self, obs) {
+  const s = score("self", self.answers);
+  const os = obs.map(o => score("obs", o.answers));
+  const subjects = [...new Set(obs.map(o => o.subject))];
+  const mean = arr => { const v = arr.filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const cell = (x, ref) => {
+    const differs = x != null && ref != null && level(x) !== level(ref);
+    return `<td class="${differs ? "diff" : ""}">${fmt(x)}</td>`;
+  };
+  const delta = (a, b) => (a == null || b == null) ? "—" : (a - b >= 0 ? "+" : "") + fmt(a - b);
+  const head = `<tr><th>Facet</th><th>Tự khai</th>${obs.map(o => `<th>${esc(o.name)}</th>`).join("")}${obs.length > 1 ? "<th>TB người khác</th>" : ""}<th>Lệch</th></tr>`;
+  const facetRow = f => {
+    const ov = os.map(x => x.facet[f]), m = mean(ov);
+    return `<tr><td>${FACET_VI[f]}${VT_FACETS.has(f) ? `<span class="vt">có câu nhạy với vai trò</span>` : ""}</td>
+      <td>${fmt(s.facet[f])}</td>${ov.map(v => cell(v, s.facet[f])).join("")}${obs.length > 1 ? cell(m, s.facet[f]) : ""}<td>${delta(m, s.facet[f])}</td></tr>`;
+  };
+  const rows = FACTORS.map(F => {
+    const ov = os.map(x => x.factor[F.k]), m = mean(ov);
+    return `<tr class="factor-row"><td>${F.k} · ${F.name}</td><td>${fmt(s.factor[F.k])}</td>${ov.map(v => `<td>${fmt(v)}</td>`).join("")}${obs.length > 1 ? `<td>${fmt(m)}</td>` : ""}<td>${delta(m, s.factor[F.k])}</td></tr>` + F.facets.map(facetRow).join("");
+  }).join("") + `<tr class="factor-row"><td colspan="${obs.length + (obs.length > 1 ? 4 : 3)}">Vị tha</td></tr>` + facetRow(ALTRUISM);
+  return `
+    <h2>${esc(self.name)}${subjects.length === 1 && subjects[0] !== self.name ? ` <span class="note">(người được đánh giá ghi là "${esc(subjects[0])}")</span>` : ""}</h2>
+    <div class="caveat">
+      Lệch = điểm người khác − điểm tự khai. Ô <span style="color:var(--warn);font-weight:700">màu cam</span> là khi người khác xếp facet đó vào mức khác (thấp / trung bình / cao) so với tự khai.
+      Hai form dùng hai thang khác nhau (mức đồng ý và tần suất), nên độ lệch là tín hiệu để trao đổi, không phải con số chính xác.
+      Facet có ghi "nhạy với vai trò" có thể lệch vì cấp bậc hay vị trí, không hẳn là điểm mù. "—" là facet không chấm (từ 2 câu "Chưa có dịp" trở lên).
+    </div>
+    <div class="table-wrap"><table>${head}${rows}</table></div>`;
+}
+
+go("home");
+</script>
+</body>
+</html>
